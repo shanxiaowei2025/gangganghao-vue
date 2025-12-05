@@ -46,7 +46,7 @@ RUN echo 'server { \
     \
     # API代理配置 \
     location /api { \
-        proxy_pass http://后端服务器IP:8000; \
+        proxy_pass http://101.42.42.201:8000; \
         proxy_set_header Host $host; \
         proxy_set_header X-Real-IP $remote_addr; \
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
