@@ -1,56 +1,72 @@
 <template>
   <div class="permission-manage">
-    <!-- 页面选择 -->
-    <el-card class="search-card" shadow="never">
-      <div class="card-header">
-        <h3 class="card-title">权限管理</h3>
-        <el-button type="primary" @click="handleSaveAll">
+    <!-- 顶部卡片：标题和操作按钮 -->
+    <el-card class="header-card" shadow="never">
+      <div class="header-content">
+        <div class="title-section">
+          <h2 class="page-title">权限管理</h2>
+          <p class="page-desc">管理各角色在不同页面的权限配置</p>
+        </div>
+        <el-button 
+          type="primary" 
+          size="large"
+          @click="handleSaveAll"
+          :loading="saving"
+          :disabled="!hasChanges"
+        >
           <el-icon><Check /></el-icon>
-          保存所有权限
+          保存所有修改
         </el-button>
       </div>
-      <el-form
-        :model="searchForm"
-        label-width="80px"
-        class="search-form"
-      >
-        <el-row :gutter="20">
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
-            <el-form-item label="选择页面">
-              <el-select
-                v-model="selectedPageId"
-                placeholder="请选择页面"
-                clearable
-                style="width: 100%"
-                @change="handlePageChange"
-              >
-                <el-option
-                  v-for="page in pageList"
-                  :key="page.id"
-                  :label="page.page_display_name"
-                  :value="page.id"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+    </el-card>
+
+    <!-- 页面选择卡片 -->
+    <el-card class="menu-selector-card" shadow="never">
+      <div class="menu-selector">
+        <div class="selector-label">
+          <el-icon class="label-icon"><Menu /></el-icon>
+          <span>选择菜单页面</span>
+        </div>
+        <el-segmented 
+          v-model="selectedPageId" 
+          :options="pageOptions"
+          size="large"
+          @change="handlePageChange"
+        />
+      </div>
     </el-card>
 
     <!-- 权限矩阵表格 -->
     <el-card class="table-card" shadow="never" v-if="selectedPageId">
+      <div class="table-header">
+        <div class="table-title-section">
+          <h3 class="table-title">{{ currentPageName }}</h3>
+          <el-tag :type="hasChanges ? 'warning' : 'success'" size="large">
+            {{ hasChanges ? '有未保存的修改' : '已保存' }}
+          </el-tag>
+        </div>
+        <div class="table-info">
+          共 <span class="count">{{ roleList.length }}</span> 个角色，
+          <span class="count">{{ permissionColumns.length }}</span> 种权限类型
+        </div>
+      </div>
+
       <div class="matrix-container">
         <el-table
           :data="roleList"
-          border
           style="width: 100%"
           v-loading="loading"
           class="permission-matrix-table"
+          :border="false"
+          :stripe="true"
         >
           <!-- 角色列 -->
-          <el-table-column prop="role_name" label="角色" width="180" fixed="left">
+          <el-table-column prop="role_name" label="角色名称" width="200" fixed="left">
             <template #default="scope">
-              <div class="role-name">{{ scope.row.role_name }}</div>
+              <div class="role-cell">
+                <el-icon class="role-icon"><UserFilled /></el-icon>
+                <span class="role-name">{{ scope.row.role_name }}</span>
+              </div>
             </template>
           </el-table-column>
 
@@ -59,15 +75,27 @@
             v-for="permission in permissionColumns"
             :key="permission.code"
             :label="permission.label"
-            :width="permission.width"
+            min-width="120"
             align="center"
           >
+            <template #header>
+              <div class="permission-header">
+                <el-icon :class="'permission-icon ' + permission.iconClass">
+                  <component :is="permission.icon" />
+                </el-icon>
+                <span>{{ permission.label }}</span>
+              </div>
+            </template>
             <template #default="scope">
               <el-switch
                 :model-value="permissionMatrix[scope.row.id]?.[permission.code] || false"
                 @update:model-value="(val) => handlePermissionSwitchChange(scope.row.id, permission.code, val)"
                 :active-value="true"
                 :inactive-value="false"
+                size="large"
+                inline-prompt
+                :active-text="'开'"
+                :inactive-text="'关'"
               />
             </template>
           </el-table-column>
@@ -76,36 +104,78 @@
     </el-card>
 
     <!-- 空状态 -->
-    <el-card class="table-card" shadow="never" v-else>
-      <el-empty description="请先选择页面" />
+    <el-card class="empty-card" shadow="never" v-else>
+      <el-empty description="请先选择菜单页面查看权限配置">
+        <template #image>
+          <el-icon class="empty-icon"><Menu /></el-icon>
+        </template>
+      </el-empty>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Check } from '@element-plus/icons-vue'
+import { 
+  Check, 
+  Menu, 
+  UserFilled, 
+  Plus, 
+  Delete, 
+  Edit, 
+  View, 
+  Lock 
+} from '@element-plus/icons-vue'
 import { getPageList } from '@/api/permission'
 import { getRoleList } from '@/api/role'
 import { getRolePermissions, assignPermissionsToRole } from '@/api/permission'
 
 const loading = ref(false)
+const saving = ref(false)
 const pageList = ref([])
 const roleList = ref([])
 const selectedPageId = ref(null)
 const selectedPage = ref(null)
 
-const searchForm = reactive({})
-
-// 权限列定义
+// 权限列定义（带图标）
 const permissionColumns = [
-  { code: 'create', label: '创建', width: 100 },
-  { code: 'delete', label: '删除', width: 100 },
-  { code: 'edit', label: '编辑', width: 100 },
-  { code: 'view_all', label: '查看所有', width: 120 },
-  { code: 'view_local', label: '查看本地', width: 120 },
-  { code: 'view_self', label: '查看自己', width: 120 }
+  { 
+    code: 'create', 
+    label: '创建', 
+    icon: Plus,
+    iconClass: 'icon-create'
+  },
+  { 
+    code: 'delete', 
+    label: '删除', 
+    icon: Delete,
+    iconClass: 'icon-delete'
+  },
+  { 
+    code: 'edit', 
+    label: '编辑', 
+    icon: Edit,
+    iconClass: 'icon-edit'
+  },
+  { 
+    code: 'view_all', 
+    label: '查看所有', 
+    icon: View,
+    iconClass: 'icon-view-all'
+  },
+  { 
+    code: 'view_local', 
+    label: '查看本地', 
+    icon: View,
+    iconClass: 'icon-view-local'
+  },
+  { 
+    code: 'view_self', 
+    label: '查看自己', 
+    icon: Lock,
+    iconClass: 'icon-view-self'
+  }
 ]
 
 // 权限矩阵：{ roleId: { permissionCode: boolean } }
@@ -113,6 +183,25 @@ const permissionMatrix = ref({})
 
 // 变更记录：记录哪些角色的权限发生了变化
 const changes = ref({})
+
+// 计算属性：页面选项（用于Segmented组件）
+const pageOptions = computed(() => {
+  return pageList.value.map(page => ({
+    label: page.page_display_name || page.page_name,
+    value: page.id
+  }))
+})
+
+// 计算属性：当前页面名称
+const currentPageName = computed(() => {
+  if (!selectedPage.value) return ''
+  return selectedPage.value.page_display_name || selectedPage.value.page_name
+})
+
+// 计算属性：是否有未保存的修改
+const hasChanges = computed(() => {
+  return Object.keys(changes.value).length > 0
+})
 
 // 加载页面列表
 const loadPageList = async () => {
@@ -255,6 +344,7 @@ const handleSaveAll = async () => {
     return
   }
 
+  saving.value = true
   loading.value = true
   try {
     // 获取当前页面的所有权限
@@ -324,6 +414,7 @@ const handleSaveAll = async () => {
     ElMessage.error(error.response?.data?.message || error.message || '保存权限失败')
   } finally {
     loading.value = false
+    saving.value = false
   }
 }
 
@@ -346,84 +437,279 @@ onMounted(async () => {
 
 <style scoped>
 .permission-manage {
+  padding: 20px;
+  background: #f5f7fa;
+  min-height: calc(100vh - 60px);
+}
+
+/* 顶部卡片样式 */
+.header-card {
+  margin-bottom: 20px;
+  border-radius: 12px;
+  border: none;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+
+.title-section {
+  flex: 1;
+}
+
+.page-title {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.page-desc {
+  margin: 0;
+  font-size: 14px;
+  color: #909399;
+}
+
+/* 菜单选择器卡片 */
+.menu-selector-card {
+  margin-bottom: 20px;
+  border-radius: 12px;
+  border: none;
+}
+
+.menu-selector {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.search-card {
-  margin-bottom: 0;
+.selector-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #606266;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.label-icon {
+  font-size: 18px;
+  color: #409eff;
+}
+
+/* 表格卡片 */
+.table-card {
+  border-radius: 12px;
+  border: none;
+}
+
+.table-header {
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid #ebeef5;
 }
 
-.card-title {
+.table-title-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.table-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: #303133;
 }
 
-.search-form {
-  margin-top: 0;
+.table-info {
+  font-size: 14px;
+  color: #909399;
 }
 
-.search-form :deep(.el-form-item) {
-  margin-bottom: 18px;
+.count {
+  font-weight: 600;
+  color: #409eff;
+  font-size: 16px;
 }
 
-.search-form :deep(.el-form-item__label) {
-  font-weight: 500;
-  color: #606266;
-}
-
-.table-card {
-  flex: 1;
-}
-
+/* 表格样式 */
 .matrix-container {
   overflow-x: auto;
+  border-radius: 8px;
 }
 
 .permission-matrix-table {
-  min-width: 800px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* 角色单元格 */
+.role-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.role-icon {
+  font-size: 20px;
+  color: #409eff;
 }
 
 .role-name {
   font-weight: 500;
   color: #303133;
+  font-size: 15px;
 }
 
-:deep(.el-table th) {
-  background-color: #f5f7fa;
-  font-weight: 600;
-  text-align: center;
+/* 权限列表头 */
+.permission-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 500;
 }
 
-:deep(.el-table td) {
-  text-align: center;
+.permission-icon {
+  font-size: 16px;
+}
+
+.icon-create {
+  color: #67c23a;
+}
+
+.icon-delete {
+  color: #f56c6c;
+}
+
+.icon-edit {
+  color: #e6a23c;
+}
+
+.icon-view-all {
+  color: #409eff;
+}
+
+.icon-view-local {
+  color: #909399;
+}
+
+.icon-view-self {
+  color: #606266;
+}
+
+/* 表格深度样式 */
+:deep(.el-table) {
+  font-size: 14px;
+}
+
+:deep(.el-table th.el-table__cell) {
+  background-color: #fafafa;
+  color: #606266;
+  font-weight: 500;
+  padding: 16px 0;
+}
+
+:deep(.el-table td.el-table__cell) {
+  padding: 14px 0;
+}
+
+:deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
+  background: #fafbfc;
+}
+
+:deep(.el-table__body tr:hover > td) {
+  background-color: #f5f7fa !important;
 }
 
 :deep(.el-switch) {
   --el-switch-on-color: #409eff;
+  --el-switch-off-color: #dcdfe6;
 }
 
+:deep(.el-switch.is-checked .el-switch__core) {
+  border-color: #409eff;
+  background-color: #409eff;
+}
+
+:deep(.el-switch__core) {
+  height: 24px;
+  min-width: 50px;
+}
+
+:deep(.el-switch__inner) {
+  font-size: 12px;
+}
+
+/* Segmented 样式 */
+:deep(.el-segmented) {
+  background-color: #f5f7fa;
+  padding: 4px;
+}
+
+:deep(.el-segmented__item) {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+:deep(.el-segmented__item.is-selected) {
+  background-color: #409eff;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(64, 158, 255, 0.2);
+}
+
+/* 空状态 */
+.empty-card {
+  border-radius: 12px;
+  border: none;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-icon {
+  font-size: 80px;
+  color: #dcdfe6;
+}
+
+/* 响应式 */
 @media (max-width: 768px) {
-  .card-header {
+  .permission-manage {
+    padding: 12px;
+  }
+
+  .header-content {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  .menu-selector {
     gap: 12px;
   }
-  
-  .card-header .el-button {
-    width: 100%;
+
+  :deep(.el-segmented) {
+    flex-wrap: wrap;
+  }
+
+  .table-header {
+    margin-bottom: 16px;
+  }
+
+  .table-title-section {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

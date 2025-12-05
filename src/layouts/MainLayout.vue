@@ -3,12 +3,11 @@
     <!-- 左侧导航栏 -->
     <el-aside :width="isCollapse ? '64px' : '200px'" class="sidebar">
       <div class="logo">
-        <h3 v-if="!isCollapse">管理系统</h3>
-        <h3 v-else>管理</h3>
+        <h3 v-if="!isCollapse">加工厂管理系统</h3>
+        <h3 v-else>加工厂</h3>
       </div>
       <el-menu
         :default-active="activeMenu"
-        :default-openeds="['system-settings', 'user-settings']"
         :collapse="isCollapse"
         :collapse-transition="false"
         router
@@ -19,43 +18,43 @@
           <template #title>仪表盘</template>
         </el-menu-item>
         <el-menu-item index="/warehouse">
-          <el-icon><Menu /></el-icon>
+          <el-icon><Box /></el-icon>
           <template #title>仓储管理</template>
         </el-menu-item>
         <el-menu-item index="/orders">
-          <el-icon><Menu /></el-icon>
+          <el-icon><Document /></el-icon>
           <template #title>订单管理</template>
         </el-menu-item>
         <el-menu-item index="/production">
-          <el-icon><Menu /></el-icon>
+          <el-icon><Tools /></el-icon>
           <template #title>生产管理</template>
         </el-menu-item>
         <el-menu-item index="/materials">
-          <el-icon><Menu /></el-icon>
+          <el-icon><Files /></el-icon>
           <template #title>材料管理</template>
         </el-menu-item>
         <el-menu-item index="/quality">
-          <el-icon><Menu /></el-icon>
+          <el-icon><Checked /></el-icon>
           <template #title>质量管理</template>
         </el-menu-item>
         <el-menu-item index="/outbound">
-          <el-icon><Menu /></el-icon>
+          <el-icon><Upload /></el-icon>
           <template #title>出库管理</template>
         </el-menu-item>
         <el-menu-item index="/delivery">
-          <el-icon><Menu /></el-icon>
+          <el-icon><Van /></el-icon>
           <template #title>配送管理</template>
         </el-menu-item>
         <el-menu-item index="/settlement">
-          <el-icon><Menu /></el-icon>
+          <el-icon><Money /></el-icon>
           <template #title>结算管理</template>
         </el-menu-item>
         <el-menu-item index="/finance">
-          <el-icon><Menu /></el-icon>
+          <el-icon><DataLine /></el-icon>
           <template #title>财务统计</template>
         </el-menu-item>
         <el-menu-item index="/admin-center">
-          <el-icon><Menu /></el-icon>
+          <el-icon><Management /></el-icon>
           <template #title>管理中心</template>
         </el-menu-item>
         <el-sub-menu 
@@ -63,37 +62,28 @@
           :class="{ 'is-active': isSystemSettingsActive }"
         >
           <template #title>
-            <el-icon><Menu /></el-icon>
+            <el-icon><Setting /></el-icon>
             <span>系统设置</span>
           </template>
-          <el-sub-menu 
-            index="user-settings"
-            :class="{ 'is-active': isUserSettingsActive }"
-          >
-            <template #title>
-              <el-icon><User /></el-icon>
-              <span>用户设置</span>
-            </template>
-            <el-menu-item index="/users">
-              <el-icon><User /></el-icon>
-              <template #title>用户管理</template>
-            </el-menu-item>
-            <el-menu-item index="/roles">
-              <el-icon><Menu /></el-icon>
-              <template #title>角色管理</template>
-            </el-menu-item>
-            <el-menu-item index="/departments">
-              <el-icon><Menu /></el-icon>
-              <template #title>部门管理</template>
-            </el-menu-item>
-          </el-sub-menu>
+          <el-menu-item index="/users">
+            <el-icon><User /></el-icon>
+            <template #title>用户管理</template>
+          </el-menu-item>
+          <el-menu-item index="/roles">
+            <el-icon><UserFilled /></el-icon>
+            <template #title>角色管理</template>
+          </el-menu-item>
+          <el-menu-item index="/departments">
+            <el-icon><OfficeBuilding /></el-icon>
+            <template #title>部门管理</template>
+          </el-menu-item>
           <el-menu-item index="/permission">
-            <el-icon><Menu /></el-icon>
+            <el-icon><Key /></el-icon>
             <template #title>权限管理</template>
           </el-menu-item>
         </el-sub-menu>
         <el-menu-item index="/devices">
-          <el-icon><Menu /></el-icon>
+          <el-icon><Monitor /></el-icon>
           <template #title>设备管理</template>
         </el-menu-item>
       </el-menu>
@@ -125,7 +115,27 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { Expand, Fold, Odometer, User, Menu } from '@element-plus/icons-vue'
+import { 
+  Expand, 
+  Fold, 
+  Odometer, 
+  User, 
+  Box, 
+  Document, 
+  Tools, 
+  Files, 
+  Checked, 
+  Upload, 
+  Van, 
+  Money, 
+  DataLine, 
+  Management, 
+  Setting, 
+  UserFilled, 
+  OfficeBuilding, 
+  Key, 
+  Monitor 
+} from '@element-plus/icons-vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 
 const route = useRoute()
@@ -137,14 +147,8 @@ const activeMenu = computed(() => {
 
 // 检测系统设置子菜单是否激活
 const isSystemSettingsActive = computed(() => {
-  const systemSettingsRoutes = ['/users', '/roles', '/departments', '/user-settings', '/system-settings', '/permission']
+  const systemSettingsRoutes = ['/users', '/roles', '/departments', '/permission']
   return systemSettingsRoutes.includes(route.path)
-})
-
-// 检测用户设置子菜单是否激活
-const isUserSettingsActive = computed(() => {
-  const userSettingsRoutes = ['/users', '/roles', '/departments']
-  return userSettingsRoutes.includes(route.path)
 })
 
 const toggleCollapse = () => {
@@ -158,9 +162,10 @@ const toggleCollapse = () => {
 }
 
 .sidebar {
-  background-color: #304156;
+  background-color: #fff;
   transition: width 0.3s;
   overflow: hidden;
+  border-right: 1px solid #e4e7ed;
 }
 
 .logo {
@@ -168,8 +173,9 @@ const toggleCollapse = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #2b3a4a;
-  color: #fff;
+  background-color: #fff;
+  color: #303133;
+  border-bottom: 1px solid #e4e7ed;
 }
 
 .logo h3 {
@@ -180,46 +186,90 @@ const toggleCollapse = () => {
 
 .sidebar-menu {
   border: none;
-  background-color: #304156;
+  background-color: #fff;
   height: calc(100vh - 60px);
   overflow-y: auto;
 }
 
-:deep(.el-menu-item) {
-  color: #bfcbd9;
+/* 隐藏侧边栏滚动条 */
+.sidebar-menu::-webkit-scrollbar {
+  display: none;
 }
+
+.sidebar-menu {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+:deep(.el-menu-item) {
+  color: #606266;
+  margin: 4px 8px;
+  border-radius: 6px;
+}
+
 :deep(.el-menu-item:hover) {
-  background-color: #263445;
+  background-color: #f5f7fa;
   color: #409eff;
 }
 
 :deep(.el-menu-item.is-active) {
-  background-color: #409eff;
-  color: #fff;
+  background-color: #ecf5ff;
+  color: #409eff;
+  font-weight: 500;
+  border-left: 3px solid #409eff;
 }
 
 :deep(.el-sub-menu__title) {
-  color: #bfcbd9;
+  color: #606266;
+  margin: 4px 8px;
+  border-radius: 6px;
 }
 
 :deep(.el-sub-menu__title:hover) {
-  background-color: #263445;
+  background-color: #f5f7fa;
   color: #409eff;
 }
 
 :deep(.el-sub-menu.is-opened > .el-sub-menu__title) {
-  color: #bfcbd9;
+  color: #409eff;
 }
 
-/* 当子菜单项被激活时，父菜单也显示蓝色背景 */
+/* 当子菜单项被激活时，父菜单也显示激活样式 */
 :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
-  background-color: #409eff !important;
-  color: #fff !important;
+  background-color: #ecf5ff !important;
+  color: #409eff !important;
+  font-weight: 500;
+}
+
+:deep(.el-sub-menu .el-menu-item) {
+  margin: 4px 8px 4px 16px;
+  border-radius: 6px;
 }
 
 :deep(.el-sub-menu .el-menu-item.is-active) {
-  background-color: #409eff;
-  color: #fff;
+  background-color: #ecf5ff;
+  color: #409eff;
+  font-weight: 500;
+  border-left: 3px solid #409eff;
+}
+
+/* 子菜单背景 */
+:deep(.el-menu--inline) {
+  background-color: #fafafa;
+}
+
+/* 图标颜色继承 */
+:deep(.el-icon) {
+  color: inherit;
+}
+
+/* 菜单项图标与文字间距 */
+:deep(.el-menu-item .el-icon) {
+  margin-right: 8px;
+}
+
+:deep(.el-sub-menu__title .el-icon) {
+  margin-right: 8px;
 }
 
 .header {

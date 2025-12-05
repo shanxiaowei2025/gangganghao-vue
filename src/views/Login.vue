@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="login-box">
       <div class="login-header">
-        <h2>管理系统</h2>
+        <h2>加工厂管理系统</h2>
         <p>欢迎登录</p>
       </div>
       <el-form
