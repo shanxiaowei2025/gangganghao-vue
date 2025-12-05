@@ -1,95 +1,132 @@
-# 管理系统前端项目
+# 钢钢好管理系统
 
-基于 Vue 3 + Element Plus 的管理系统前端项目
+基于 Vue 3 + Element Plus + Vite 的现代化管理系统前端项目
 
 ## 技术栈
 
-- Vue 3
-- Vue Router 4
-- Element Plus
-- Vite
-- Pinia
+- **Vue 3** - 渐进式 JavaScript 框架
+- **Vue Router 4** - 官方路由管理器
+- **Pinia** - 状态管理
+- **Element Plus** - UI 组件库
+- **Axios** - HTTP 客户端
+- **Vite** - 下一代前端构建工具
+
+## 快速开始
+
+### 环境要求
+
+- Node.js >= 16.0.0
+- pnpm / npm / yarn
+
+### 安装依赖
+
+```bash
+# 使用 pnpm（推荐）
+pnpm install
+
+# 或使用 npm
+npm install
+```
+
+### 配置环境变量
+
+复制 `.env.template` 文件为 `.env` 并修改配置：
+
+```bash
+cp .env.template .env
+```
+
+编辑 `.env` 文件，设置后端 API 地址：
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+### 启动开发服务器
+
+```bash
+pnpm dev
+```
+
+访问 http://localhost:3000
+
+### 构建生产版本
+
+```bash
+pnpm build
+```
+
+构建产物将生成在 `dist` 目录。
 
 ## 项目结构
 
 ```
-guanlixitong-vue/
+gangganghao-vue/
 ├── src/
-│   ├── assets/          # 静态资源
-│   │   └── styles/      # 样式文件
-│   ├── components/      # 公共组件
-│   │   └── UserAvatar.vue  # 用户头像组件
-│   ├── layouts/         # 布局组件
-│   │   └── MainLayout.vue  # 主布局
-│   ├── router/          # 路由配置
-│   │   └── index.js
-│   ├── views/           # 页面组件
-│   │   ├── Login.vue    # 登录页
-│   │   └── Dashboard.vue # 仪表盘
-│   ├── App.vue          # 根组件
-│   └── main.js          # 入口文件
-├── index.html
-├── package.json
-└── vite.config.js
+│   ├── api/              # API 接口
+│   ├── assets/           # 静态资源
+│   ├── components/       # 公共组件
+│   ├── config/           # 配置文件
+│   ├── layouts/          # 布局组件
+│   ├── router/           # 路由配置
+│   ├── utils/            # 工具函数
+│   ├── views/            # 页面组件
+│   ├── App.vue           # 根组件
+│   └── main.js           # 入口文件
+├── .env.template         # 环境变量模板
+├── nginx.conf            # Nginx 配置
+├── docker-compose.yml    # Docker Compose 配置
+├── Dockerfile            # Docker 配置
+└── vite.config.js        # Vite 配置
 ```
 
-## 安装依赖
+## 部署
+
+### Docker 部署（推荐）
+
+使用 Docker Compose 一键部署：
 
 ```bash
-npm install
+docker-compose up -d
 ```
 
-## 启动开发服务器
+### 传统部署
 
-```bash
-npm run dev
-```
+详细部署说明请查看 [DEPLOY.md](./DEPLOY.md)
 
-## 构建生产版本
+## 功能模块
 
-```bash
-npm run build
-```
+- ✅ 用户认证与授权
+- ✅ 用户管理
+- ✅ 角色管理
+- ✅ 部门管理
+- ✅ 权限管理
+- ✅ 仓储管理
+- ✅ 订单管理
+- ✅ 生产管理
+- ✅ 材料管理
+- ✅ 质量管理
+- ✅ 出库管理
+- ✅ 配送管理
+- ✅ 结算管理
+- ✅ 财务统计
+- ✅ 设备管理
 
-## 功能说明
+## 开发说明
 
-### 已实现功能
+### API 配置
 
-1. **登录页面**
-   - 用户名密码登录
-   - 表单验证
-   - 使用虚拟数据进行登录（后续可对接真实接口）
+后端 API 地址在 `src/config/index.js` 中配置，通过环境变量 `VITE_API_BASE_URL` 设置。
 
-2. **主布局**
-   - 左侧导航栏（可折叠）
-   - 顶部导航栏
-   - 右上角用户头像下拉菜单
+### 路由配置
 
-3. **用户功能**
-   - 显示当前登录用户信息
-   - 修改个人资料
-   - 退出登录
+路由配置在 `src/router/index.js`，已实现路由守卫进行权限验证。
 
-4. **仪表盘**
-   - 统计数据展示
-   - 最近活动时间线
-   - 系统信息展示
+### 状态管理
 
-### 后续对接接口说明
+使用 Pinia 进行状态管理，可在 `src/stores/` 目录添加 store 模块。
 
-项目中使用虚拟数据，后续需要对接后端接口时，请修改以下文件：
+## License
 
-1. **登录接口** - `src/views/Login.vue`
-   - 替换 `handleLogin` 方法中的模拟登录逻辑
-
-2. **用户信息接口** - `src/components/UserAvatar.vue`
-   - 替换 `loadUserInfo` 方法中的本地存储读取
-   - 替换 `handleSaveProfile` 方法中的保存逻辑
-
-3. **路由守卫** - `src/router/index.js`
-   - 根据实际需求调整 token 验证逻辑
-
-## 默认登录信息
-
-当前使用虚拟数据，任意用户名和密码（密码长度≥6）都可以登录。
+MIT
 

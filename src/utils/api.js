@@ -157,7 +157,7 @@ service.interceptors.response.use(
     } else if (error.request) {
       // 检查是否是连接被拒绝（后端服务未启动）
       if (error.code === 'ECONNREFUSED' || error.message?.includes('Network Error')) {
-        ElMessage.error('无法连接到后端服务，请确保后端服务已启动（http://localhost:8000）')
+        ElMessage.error(`无法连接到后端服务，请确保后端服务已启动（${config.baseURL}）`)
       } else {
         ElMessage.error('网络错误，请检查网络连接')
       }
