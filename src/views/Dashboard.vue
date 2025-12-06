@@ -540,37 +540,67 @@ onMounted(() => {
   }
 }
 
-/* Element Plus 输入框样式覆盖 */
-:deep(.el-input__wrapper) {
-  background-color: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+/* Element Plus 输入框样式覆盖 - 内联编辑风格 */
+:deep(.edit-input .el-input__wrapper),
+:deep(.edit-input-small .el-input__wrapper),
+:deep(.edit-input-number .el-input__wrapper) {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px 12px;
+  border-radius: 6px;
 }
 
-:deep(.el-input__inner) {
-  color: #303133;
+:deep(.edit-input .el-input__inner),
+:deep(.edit-input-small .el-input__inner),
+:deep(.edit-input-number .el-input__inner) {
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  text-align: center;
+  font-weight: 700;
+  font-size: 36px;
+  line-height: 1;
+}
+
+:deep(.edit-input-small .el-input__inner) {
+  font-size: 16px;
+}
+
+:deep(.edit-input-number .el-input__inner) {
+  font-size: 36px;
+}
+
+:deep(.edit-input .el-input__inner::placeholder),
+:deep(.edit-input-small .el-input__inner::placeholder),
+:deep(.edit-input-number .el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 :deep(.el-input-number) {
-  width: 100%;
+  width: auto;
 }
 
 :deep(.el-input-number__decrease),
 :deep(.el-input-number__increase) {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
-:deep(.el-input-number__decrease:hover),
-:deep(.el-input-number__increase:hover) {
-  background-color: rgba(255, 255, 255, 0.3);
+  display: none;
 }
 
 :deep(.el-date-editor) {
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: transparent;
 }
 
 :deep(.el-date-editor .el-input__wrapper) {
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+:deep(.el-date-editor .el-input__inner) {
+  color: #fff;
 }
 </style>
 

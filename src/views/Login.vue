@@ -22,12 +22,21 @@
         <el-form-item prop="password">
           <el-input
             v-model="loginForm.password"
-            type="password"
+            :type="showPassword ? 'text' : 'password'"
             placeholder="请输入密码"
             size="large"
             :prefix-icon="Lock"
             @keyup.enter="handleLogin"
-          />
+          >
+            <template #suffix>
+              <el-icon 
+                class="password-toggle-icon" 
+                @click="showPassword = !showPassword"
+              >
+                <component :is="showPassword ? View : Hide" />
+              </el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item>
           <el-button
@@ -49,13 +58,14 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, View, Hide } from '@element-plus/icons-vue'
 import { login } from '@/api/user'
 import config from '@/config'
 
 const router = useRouter()
 const loginFormRef = ref(null)
 const loading = ref(false)
+const showPassword = ref(false)
 
 const loginForm = reactive({
   username: '',
@@ -166,6 +176,16 @@ const handleLogin = async () => {
 
 :deep(.el-input__wrapper) {
   border-radius: 6px;
+}
+
+.password-toggle-icon {
+  cursor: pointer;
+  color: #909399;
+  transition: color 0.3s;
+}
+
+.password-toggle-icon:hover {
+  color: #667eea;
 }
 </style>
 
