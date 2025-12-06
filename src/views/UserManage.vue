@@ -87,8 +87,16 @@
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="username" label="账号" min-width="120" />
         <el-table-column prop="real_name" label="姓名" min-width="100" />
-        <el-table-column prop="id_card" label="身份证号" min-width="180" />
-        <el-table-column prop="phone" label="手机号" min-width="120" />
+        <el-table-column prop="id_card" label="身份证号" min-width="180">
+          <template #default="{ row }">
+            {{ encryptIdCard(row.id_card) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="phone" label="手机号" min-width="120">
+          <template #default="{ row }">
+            {{ encryptPhone(row.phone) }}
+          </template>
+        </el-table-column>
         <el-table-column label="部门" min-width="120">
           <template #default="scope">
             {{ scope.row.department?.department_name || '-' }}
@@ -292,6 +300,7 @@ import {
   getDepartmentList,
   getRoleList
 } from '@/api/user'
+import { encryptIdCard, encryptPhone } from '@/utils/encrypt'
 
 const loading = ref(false)
 const userList = ref([])
@@ -430,12 +439,12 @@ const handleEdit = async (row) => {
     // 加载部门和角色列表
     await loadDepartmentList()
     await loadRoleList()
-    
+
     // 处理角色ID列表
-    const roleIds = detail.roles && Array.isArray(detail.roles) 
+    const roleIds = detail.roles && Array.isArray(detail.roles)
       ? detail.roles.map(role => role.id || role.role_id || role)
       : []
-    
+
     Object.assign(editForm, {
       id: detail.id,
       username: detail.username,
@@ -614,7 +623,7 @@ onMounted(() => {
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .card-header .el-button {
     width: 100%;
   }
