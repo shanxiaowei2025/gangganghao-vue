@@ -13,79 +13,35 @@
         router
         class="sidebar-menu"
       >
-        <el-menu-item index="/dashboard">
-          <el-icon><Odometer /></el-icon>
-          <template #title>仪表盘</template>
-        </el-menu-item>
-        <el-menu-item index="/warehouse">
-          <el-icon><Box /></el-icon>
-          <template #title>仓储管理</template>
-        </el-menu-item>
-        <el-menu-item index="/orders">
-          <el-icon><Document /></el-icon>
-          <template #title>订单管理</template>
-        </el-menu-item>
-        <el-menu-item index="/production">
-          <el-icon><Tools /></el-icon>
-          <template #title>生产管理</template>
-        </el-menu-item>
-        <el-menu-item index="/materials">
-          <el-icon><Files /></el-icon>
-          <template #title>材料管理</template>
-        </el-menu-item>
-        <el-menu-item index="/quality">
-          <el-icon><Checked /></el-icon>
-          <template #title>质量管理</template>
-        </el-menu-item>
-        <el-menu-item index="/outbound">
-          <el-icon><Upload /></el-icon>
-          <template #title>出库管理</template>
-        </el-menu-item>
-        <el-menu-item index="/delivery">
-          <el-icon><Van /></el-icon>
-          <template #title>配送管理</template>
-        </el-menu-item>
-        <el-menu-item index="/settlement">
-          <el-icon><Money /></el-icon>
-          <template #title>结算管理</template>
-        </el-menu-item>
-        <el-menu-item index="/finance">
-          <el-icon><DataLine /></el-icon>
-          <template #title>财务统计</template>
-        </el-menu-item>
-        <el-menu-item index="/admin-center">
-          <el-icon><Management /></el-icon>
-          <template #title>管理中心</template>
-        </el-menu-item>
-        <el-sub-menu 
-          index="system-settings"
-          :class="{ 'is-active': isSystemSettingsActive }"
-        >
-          <template #title>
-            <el-icon><Setting /></el-icon>
-            <span>系统设置</span>
-          </template>
-          <el-menu-item index="/users">
-            <el-icon><User /></el-icon>
-            <template #title>用户管理</template>
+        <!-- 动态菜单项 -->
+        <template v-for="menu in menuList" :key="menu.id">
+          <el-menu-item 
+            v-if="!menu.children || menu.children.length === 0"
+            :index="menu.route_path"
+          >
+            <el-icon><component :is="getMenuIcon(menu.page_name)" /></el-icon>
+            <template #title>{{ menu.page_display_name || menu.page_name }}</template>
           </el-menu-item>
-          <el-menu-item index="/roles">
-            <el-icon><UserFilled /></el-icon>
-            <template #title>角色管理</template>
-          </el-menu-item>
-          <el-menu-item index="/departments">
-            <el-icon><OfficeBuilding /></el-icon>
-            <template #title>部门管理</template>
-          </el-menu-item>
-          <el-menu-item index="/permission">
-            <el-icon><Key /></el-icon>
-            <template #title>权限管理</template>
-          </el-menu-item>
-        </el-sub-menu>
-        <el-menu-item index="/devices">
-          <el-icon><Monitor /></el-icon>
-          <template #title>设备管理</template>
-        </el-menu-item>
+          
+          <el-sub-menu 
+            v-else
+            :index="menu.id.toString()"
+            :class="{ 'is-active': isSubMenuActive(menu) }"
+          >
+            <template #title>
+              <el-icon><component :is="getMenuIcon(menu.page_name)" /></el-icon>
+              <span>{{ menu.page_display_name || menu.page_name }}</span>
+            </template>
+            <el-menu-item 
+              v-for="child in menu.children" 
+              :key="child.id"
+              :index="child.route_path"
+            >
+              <el-icon><component :is="getMenuIcon(child.page_name)" /></el-icon>
+              <template #title>{{ child.page_display_name || child.page_name }}</template>
+            </el-menu-item>
+          </el-sub-menu>
+        </template>
       </el-menu>
     </el-aside>
 
@@ -113,7 +69,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { 
   Expand, 
@@ -137,23 +93,126 @@ import {
   Monitor 
 } from '@element-plus/icons-vue'
 import UserAvatar from '@/components/UserAvatar.vue'
+import { getPageList } from '@/api/permission'
 
 const route = useRoute()
 const isCollapse = ref(false)
+const menuList = ref([])
 
 const activeMenu = computed(() => {
   return route.path
 })
 
-// 检测系统设置子菜单是否激活
-const isSystemSettingsActive = computed(() => {
-  const systemSettingsRoutes = ['/users', '/roles', '/departments', '/permission']
-  return systemSettingsRoutes.includes(route.path)
-})
+// 菜单图标映射
+const iconMap = {
+  'dashboard': Odometer,
+  'warehouse': Box,
+  'orders': Document,
+  'production': Tools,
+  'materials': Files,
+  'quality': Checked,
+  'outbound': Upload,
+  'delivery': Van,
+  'settlement': Money,
+  'finance': DataLine,
+  'admin-center': Management,
+  'system-settings': Setting,
+  'users': User,
+  'roles': UserFilled,
+  'departments': OfficeBuilding,
+  'permission': Key,
+  'devices': Monitor
+}
+
+// 根据页面名称获取菜单图标
+const getMenuIcon = (pageName) => {
+  // 从 route_path 提取页面标识
+  if (!pageName) return Odometer
+  const key = pageName.toLowerCase().replace(/[_-]/g, '-')
+  return iconMap[key] || Odometer
+}
+
+// 检测子菜单是否激活
+const isSubMenuActive = (menu) => {
+  if (!menu.children || menu.children.length === 0) return false
+  return menu.children.some(child => child.route_path === route.path)
+}
+
+// 根据 page_name 生成 route_path
+const generateRoutePath = (pageName) => {
+  if (!pageName) return '/'
+  // 将 page_name 转换为路由路径
+  // 例如: dashboard -> /dashboard, material_manage -> /materials
+  const pathMap = {
+    'dashboard': '/dashboard',
+    'warehouse': '/warehouse',
+    'orders': '/orders',
+    'production': '/production',
+    'material_manage': '/materials',
+    'quality_manage': '/quality',
+    'outbound_manage': '/outbound',
+    'delivery_manage': '/delivery',
+    'settlement_manage': '/settlement',
+    'finance_stats': '/finance',
+    'admin_center': '/admin-center',
+    'users': '/users',
+    'roles': '/roles',
+    'departments': '/departments',
+    'permissions': '/permission',
+    'device_manage': '/devices'
+  }
+  return pathMap[pageName] || `/${pageName.toLowerCase()}`
+}
+
+// 加载菜单列表
+const loadMenuList = async () => {
+  try {
+    const res = await getPageList({ page: 1, pagesize: 1000 })
+    const pages = Array.isArray(res.data) ? res.data : []
+    
+    // 为每个页面生成 route_path
+    const pagesWithPath = pages.map(page => ({
+      ...page,
+      route_path: page.route_path || generateRoutePath(page.page_name)
+    }))
+    
+    // 构建树形菜单结构：根据 parent_id 建立父子关系
+    const menuMap = new Map()
+    const rootMenus = []
+    
+    // 第一遍：将所有页面放入 map
+    pagesWithPath.forEach(page => {
+      menuMap.set(page.id, { ...page, children: [] })
+    })
+    
+    // 第二遍：建立父子关系
+    pagesWithPath.forEach(page => {
+      if (page.parent_id === null || page.parent_id === undefined) {
+        // 没有父级，作为根菜单
+        rootMenus.push(menuMap.get(page.id))
+      } else {
+        // 有父级，添加到父菜单的 children
+        const parent = menuMap.get(page.parent_id)
+        if (parent) {
+          parent.children.push(menuMap.get(page.id))
+        }
+      }
+    })
+    
+    menuList.value = rootMenus
+  } catch (error) {
+    console.error('获取菜单列表失败:', error)
+    menuList.value = []
+  }
+}
 
 const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value
 }
+
+onMounted(() => {
+  loadMenuList()
+})
 </script>
 
 <style scoped>

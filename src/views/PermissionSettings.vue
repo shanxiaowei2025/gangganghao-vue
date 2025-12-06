@@ -138,45 +138,8 @@ const roleList = ref([])
 const selectedPageId = ref(null)
 const selectedPage = ref(null)
 
-// 权限列定义（带图标）
-const permissionColumns = [
-  { 
-    code: 'create', 
-    label: '创建', 
-    icon: Plus,
-    iconClass: 'icon-create'
-  },
-  { 
-    code: 'delete', 
-    label: '删除', 
-    icon: Delete,
-    iconClass: 'icon-delete'
-  },
-  { 
-    code: 'edit', 
-    label: '编辑', 
-    icon: Edit,
-    iconClass: 'icon-edit'
-  },
-  { 
-    code: 'view_all', 
-    label: '查看所有', 
-    icon: View,
-    iconClass: 'icon-view-all'
-  },
-  { 
-    code: 'view_local', 
-    label: '查看本地', 
-    icon: View,
-    iconClass: 'icon-view-local'
-  },
-  { 
-    code: 'view_self', 
-    label: '查看自己', 
-    icon: Lock,
-    iconClass: 'icon-view-self'
-  }
-]
+// 权限列定义（从接口动态获取）
+const permissionColumns = ref([])
 
 // 权限矩阵：{ roleId: { permissionCode: boolean } }
 const permissionMatrix = ref({})
@@ -185,11 +148,30 @@ const permissionMatrix = ref({})
 const changes = ref({})
 
 // 计算属性：页面选项（用于Segmented组件）
+// 显示：没有子菜单的根菜单 + 所有有父菜单的子菜单
+// 不显示：有子菜单的根菜单（如"系统管理"）
 const pageOptions = computed(() => {
-  return pageList.value.map(page => ({
-    label: page.page_display_name || page.page_name,
-    value: page.id
-  }))
+  // 找出所有有子菜单的页面ID
+  const parentIds = new Set()
+  pageList.value.forEach(page => {
+    if (page.parent_id !== null && page.parent_id !== undefined) {
+      parentIds.add(page.parent_id)
+    }
+  })
+  
+  return pageList.value
+    .filter(page => {
+      // 如果是根菜单（parent_id为null），只显示没有子菜单的
+      if (page.parent_id === null || page.parent_id === undefined) {
+        return !parentIds.has(page.id)
+      }
+      // 如果是子菜单（有parent_id），显示所有
+      return true
+    })
+    .map(page => ({
+      label: page.page_display_name || page.page_name,
+      value: page.id
+    }))
 })
 
 // 计算属性：当前页面名称
@@ -261,7 +243,7 @@ const handlePageChange = async (pageId) => {
     const matrix = {}
     for (const role of roleList.value) {
       matrix[role.id] = {}
-      for (const perm of permissionColumns) {
+      for (const perm of permissionColumns.value) {
         matrix[role.id][perm.code] = false
       }
     }
@@ -287,7 +269,7 @@ const handlePageChange = async (pageId) => {
             .map(p => p.id)
 
           // 更新矩阵：检查角色是否有对应的权限
-          for (const perm of permissionColumns) {
+          for (const perm of permissionColumns.value) {
             // 查找匹配的权限
             const matchedPermission = pagePermissions.find(p => {
               const code = p.permission_code || ''
@@ -382,7 +364,7 @@ const handleSaveAll = async () => {
       })
 
       // 添加当前页面的权限（根据矩阵状态）
-      for (const perm of permissionColumns) {
+      for (const perm of permissionColumns.value) {
         if (permissionMatrix.value[roleIdNum]?.[perm.code]) {
           // 查找对应的权限ID
           const permission = allPermissions.find(p => {
@@ -423,9 +405,21 @@ const loadPagePermissions = async (pageId) => {
   try {
     const { getPermissionList } = await import('@/api/permission')
     const res = await getPermissionList({ page_id: pageId, page: 1, pagesize: 1000 })
-    return Array.isArray(res.data) ? res.data : []
+    const permissions = Array.isArray(res.data) ? res.data : []
+    
+    // 将权限列表转换为权限列定义
+    permissionColumns.value = permissions.map(perm => ({
+      code: perm.permission_code || perm.code,
+      label: perm.permission_name || perm.name,
+      id: perm.id,
+      icon: Plus, // 默认使用 Plus 图标，可根据权限类型自定义
+      iconClass: 'permission-icon'
+    }))
+    
+    return permissions
   } catch (error) {
     console.error('获取页面权限失败:', error)
+    permissionColumns.value = []
     return []
   }
 }
